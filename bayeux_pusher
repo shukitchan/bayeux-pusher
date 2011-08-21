@@ -1,72 +1,213 @@
-#!/home/y/bin/php
+#!/home/y/bin/php 
 <?php
-if(count($argv) != 4)
+
+function bayeux_request($msg, $url, $headers, $output, $debug=false)
 {
- echo "Usage: bayeux_pusher.php <url> <channel> <msg>\n";
- exit(0);
+  if($debug)
+  {
+    echo 'REQUEST: '.$msg."\n";
+  }
+
+  $curl = curl_init();
+  curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 1);
+  curl_setopt($curl, CURLOPT_TIMEOUT, 3);
+  curl_setopt($curl, CURLOPT_POST, true);
+  curl_setopt($curl, CURLOPT_POSTFIELDS, $msg );
+  curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+  curl_setopt($curl, CURLOPT_URL, $url);
+  curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+  $msg_result =  curl_exec($curl);
+
+  if($debug)
+  {
+    echo 'REPONSE: '.$msg_result."\n";
+  }
+ 
+  if(curl_errno($curl))
+  {
+    fwrite(STDERR, curl_error($curl)."\n");
+    exit(1);
+  }
+
+  $result = json_decode($msg_result, true);
+  if($result == NULL)
+  {
+    fwrite(STDERR, "Invalid Json Output in response\n");
+    exit(1);
+  }  
+
+  $success = false;
+  if($result[0] && isset($result[0]['successful']))
+  {
+    $success = $result[0]['successful'];
+  } 
+
+  $value = true;
+  if($success)
+  {
+    if($output != null && $output != '')
+    {
+      if($result[0] && isset($result[0][$output]))
+      {
+        $value = $result[0][$output];
+      }
+      else
+      {
+        fwrite(STDERR, "Invalid Json Output in Handshake response\n");
+        exit(1);
+      }
+    }
+  }
+  else
+  {
+    if($result[0] && isset($result[0]['error']))
+    {
+      $error = $result[0]['error'];
+      fwrite(STDERR, error);
+      exit(1);
+    }
+    else
+    {
+      fwrite(STDERR, "Unsuccessful response from server\n");
+      exit(1);
+    }
+  }
+  return $value;
 }
-//$url = 'http://server/bayeux';
-//$channel = '/test/channel1';
-//$msg = 'test'.time();
-$url = $argv[1];
-$channel = $argv[2];
-$msg = $argv[3];
 
-$header = array('Content-type: application/json');
+$options = array();
+$options['debug'] = false;
+$options['skip'] = false;
+$options['message'] = '';
+$options['channel'] = '';
+$options['url'] = '';
+$options['ext'] = '';
+$options['headers'] = array();
+$options['id'] = '1321';
 
-$handshake = "{\"channel\":\"/meta/handshake\", \"minimumVersion\":\"0.9\", \"ve
-rsion\":\"1.0\", \"supportedConnectionTypes\": [\"long-polling\"]}";
+for ($i = 1; $i < count($argv); $i++)
+{
+  switch($argv[$i])
+  {
+    case "-v":
+    case "--debug":
+      $options['debug'] = true;
+      break;
 
-$curl = curl_init();
-curl_setopt($curl, CURLOPT_POST, true);
-curl_setopt($curl, CURLOPT_POSTFIELDS, $handshake );
-curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($curl, CURLOPT_URL, $url);
-curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
-$handshake_result =  curl_exec($curl);
+    case "-s":
+    case "--skip":
+      $options['skip'] = true;
+      break;
 
-echo 'HANDSHAKE RESULT:'.$handshake_result."\n";
+    case "-i":
+      if(isset($argv[$i + 1]))
+      {
+        $options['id'] = $argv[++$i];
+      }
+      break;
 
-$result = json_decode($handshake_result, true);
-$clientId = $result[0]['clientId'];
+    case "-m":
+      if(isset($argv[$i + 1]))
+      { 
+        $options['message'] = $argv[++$i];
+      }
+      break;
 
+    case "-c":
+      if(isset($argv[$i + 1]))
+      {
+        $options['channel'] = $argv[++$i];
+      }
+      break;
 
-$connect = "{\"channel\":\"/meta/connect\", \"clientId\":\"".$clientId."\", \"co
-nnectionType\":\"long-polling\"}";
-$curl = curl_init();
-curl_setopt($curl, CURLOPT_POST, true);
-curl_setopt($curl, CURLOPT_POSTFIELDS, $connect );
-curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($curl, CURLOPT_URL, $url);
-curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
-$connect_result =  curl_exec($curl);
+    case "-l":
+      if(isset($argv[$i + 1]))
+      { 
+        $options['url'] = $argv[++$i];
+      }
+      break;
+   
+    case "-x":
+      if(isset($argv[$i + 1]))
+      {
+        $options['ext'] = $argv[++$i];
+      }  
+      break;
 
-echo 'CONNECT RESULT:'.$connect_result."\n";
+    case "-H":
+      if(isset($argv[$i + 1]))
+      {
+	$options['headers'][] = $argv[++$i];
+      } 
+      break; 
 
-$channel = "[{\"channel\":\"".$channel."\",\"data\":\"".$msg."\",\"id\":\"1321\"
-,\"clientId\":\"".$clientId."\"}]";
-
-$curl = curl_init();
-curl_setopt($curl, CURLOPT_POST, true);
-curl_setopt($curl, CURLOPT_POSTFIELDS, $channel );
-curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($curl, CURLOPT_URL, $url);
-curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
-$channel_result =  curl_exec($curl);
-
-echo 'CHANNEL RESULT:'.$channel_result."\n";
-
-$disconnect = "{\"channel\":\"/meta/disconnect\", \"clientId\":\"".$clientId."\"
-}";
-
-$curl = curl_init();
-curl_setopt($curl, CURLOPT_POST, true);
-curl_setopt($curl, CURLOPT_POSTFIELDS, $disconnect );
-curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($curl, CURLOPT_URL, $url);
-curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
-$disconnect_result = curl_exec($curl);
-
-echo 'DISCONNECT RESULT:'.$disconnect_result."\n";
+    case "-h":
+    case "--help":
 ?>
+This will push a single message to a specified channel to a bayeux 1.0 compliant server. 
 
+ Usage: bayeux_pusher <option>
+
+ --help, -h      to get this help
+ --debug, -v     to print debug messages
+ --skip, -s      to skip handshake/connect/disconnect and send message directly
+ -m              required. Message to be sent
+ -c              required. Channel for the message to be sent
+ -l              required. URL of the bayeux 1.0 compliant server
+ -x              optional. add "ext" fields for the handshake message. Usually for authentication purpose
+ -H              optional. Extra request header to be added to all HTTP requests for the protocol. Usually for authentication purpose
+ -i              optional. id for the message to be sent
+
+<?php
+      exit(0);
+      break;
+  }
+}
+
+if($options['message'] == '' || $options['channel'] == '' || $options['url'] == '')
+{
+  echo "Usage: bayeux_pusher -l <url> -c <channel> -m <msg>\n";
+  exit(1);
+}
+$url = $options['url'];
+$channel = $options['channel'];
+$msg = $options['message'];
+$headers = $options['headers'];
+$headers[] = 'Content-type: application/json';
+$ext = $options['ext'];
+$debug = $options['debug'];
+$skip = $options['skip'];
+
+if($skip)
+{
+  $channel = "[{\"channel\":\"".$channel."\",\"data\":\"".$msg."\"}]";
+
+  bayeux_request($channel, $url, $headers, '', $debug);
+}
+else
+{
+  if($ext != '')
+  {
+    $handshake = $handshake = "{\"channel\":\"/meta/handshake\", \"minimumVersion\":\"1.0\", \"version\":\"1.0\", \"supportedConnectionTypes\": [\"long-polling\"], \"ext\": \"".$ext."\"}";
+  }
+  else
+  {
+    $handshake = "{\"channel\":\"/meta/handshake\", \"minimumVersion\":\"1.0\", \"version\":\"1.0\", \"supportedConnectionTypes\": [\"long-polling\"]}";
+  }
+
+  $clientId = bayeux_request($handshake, $url, $headers, 'clientId', $debug);
+
+  $connect = "{\"channel\":\"/meta/connect\", \"clientId\":\"".$clientId."\", \"connectionType\":\"long-polling\"}";
+
+  bayeux_request($connect, $url, $headers, '', $debug);
+
+  $channel = "[{\"channel\":\"".$channel."\",\"data\":\"".$msg."\",\"id\":\"".$options['id']."\",\"clientId\":\"".$clientId."\"}]";
+
+  bayeux_request($channel, $url, $headers, '', $debug);
+
+  $disconnect = "{\"channel\":\"/meta/disconnect\", \"clientId\":\"".$clientId."\"}"; 
+
+  bayeux_request($disconnect, $url, $headers, '', $debug);
+}
+exit(0);
+?>

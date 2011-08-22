@@ -3,6 +3,7 @@
 This is a commandline tool to send a message to a [Bayeux 1.0](http://svn.cometd.com/trunk/bayeux/bayeux.html) compliant server. It can be a great tool to help test Bayeux server implementation as well.
 
 Features
+
 * Verbose mode to print out the HTTP requests sent and HTTP responses received
 * Can do HANDSHAKE/CONNECT before sending the message. And then do the DISCONNECT request afterward. In this mode, you can control the message ID you use.
 * Can skip HANDSHAKE/CONNECT/DISCONNECT completely and directly send the message to the server

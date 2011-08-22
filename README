@@ -1,6 +1,6 @@
 # Bayeux Pusher
 
-This is a commandline tool to send a message to a ![Bayeux 1.0](http://svn.cometd.com/trunk/bayeux/bayeux.html) compliant server. It can be a great tool to help test Bayeux server implementation as well.
+This is a commandline tool to send a message to a [Bayeux 1.0](http://svn.cometd.com/trunk/bayeux/bayeux.html) compliant server. It can be a great tool to help test Bayeux server implementation as well.
 
 Features
 * Verbose mode to print out the HTTP requests sent and HTTP responses received
@@ -14,8 +14,8 @@ You can run the tool with "-h" to see the help message
 # Requirements
 
 * PHP 5.2
-* Supports ![PHP Curl functions](http://www.php.net/manual/en/book.curl.php)
-* Supports ![PHP JSON functions](http://www.php.net/manual/en/ref.json.php)
+* Supports [PHP Curl functions](http://www.php.net/manual/en/book.curl.php)
+* Supports [PHP JSON functions](http://www.php.net/manual/en/ref.json.php)
 
 # Installations
 

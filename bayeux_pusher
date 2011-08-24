@@ -1,4 +1,4 @@
-#!/home/y/bin/php 
+#!/usr/bin/php 
 <?php
 
 function bayeux_request($msg, $url, $headers, $output, $debug=false)

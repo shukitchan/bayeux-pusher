@@ -22,3 +22,5 @@ You can run the tool with "-h" to see the help message
 
 1. Download the script onto your machine
 2. Make sure the script is in a directory that is in the $PATH
+3. Make sure the script is executable
+4. Make sure the php is in /usr/bin/php
